@@ -8,7 +8,10 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
 dependencies = [
-    "fastapi[standard] (>=0.127.0,<0.128.0)"
+    "fastapi[standard] (>=0.127.0,<0.128.0)",
+    "pydantic-settings (>=2.12.0,<3.0.0)",
+    "sqlalchemy (>=2.0.46,<3.0.0)",
+    "alembic (>=1.18.3,<2.0.0)"
 ]
 
 
@@ -25,7 +28,7 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 79
+line-length = 120
 extend-exclude = ['migrations']
 
 [tool.ruff.lint]
