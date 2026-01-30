@@ -28,15 +28,17 @@ def session():
 
 @contextmanager # gerenciador de contexto. Permite que criemos um "with"
 def _mock_db_time(*,model,time=datetime(2026,1,1)):
-    def fake_time_hook(mapper, connection,target):
+    def fake_time_handler(mapper, connection,target):
         ''' funcao para mockar o created_at '''
         if hasattr(target, 'created_at'):
             target.created_at = time
-    event.listen(model, 'before_insert', fake_time_hook)
+        if hasattr(target,'updated_at'):
+            target.updated_at = time
+    event.listen(model, 'before_insert', fake_time_handler)
 
     yield time # retorna o time na abertura do gerenciamento de contexto
 
-    event.remove(model, 'before_insert', fake_time_hook) # remove após o g. de contexto finalizar
+    event.remove(model, 'before_insert', fake_time_handler) # remove após o g. de contexto finalizar
 
 @pytest.fixture
 def mock_db_time():

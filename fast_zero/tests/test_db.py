@@ -19,6 +19,7 @@ def test_create_user(session):
         'password': 'secret',
         'email': 'teste@test',
         'created_at': time,  # usa o time gerado
+        'updated_at': time,
     }
     '''
     Isso faz com que durante o commit,
