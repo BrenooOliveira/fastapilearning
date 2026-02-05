@@ -61,7 +61,25 @@ def test_update_user(client, user):
     }
 
 
-def test_delete_user(client):
+def test_update_integrity_error(client, user):
+    """
+    - potencial erro: usuario ser criado e entao
+        alterar nome/email para um registro já existente
+    """
+    # criando user 'fausto'
+    client.post('/users/', json={'username': 'fausto', 'email': 'fausto@example.com', 'password': 'secret'})
+
+    # alterando o username que demos update na "test_update_user" para fausto
+    # forçando conflito do BD unique
+    response_update = client.put(
+        f'/users/{user.id}', json={'username': 'fausto', 'email': 'bob@example.com', 'password': 'newsecret'}
+    )
+
+    assert response_update.status_code == HTTPStatus.CONFLICT
+    assert response_update.json() == {'detail': 'Username or Email already exists'}
+
+
+def test_delete_user(client, user):
     response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.OK

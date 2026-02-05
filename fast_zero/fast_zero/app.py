@@ -1,8 +1,8 @@
 from http import HTTPStatus
-from sqlite3 import IntegrityError
 
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from fast_zero.database import get_session
@@ -55,7 +55,7 @@ def update_user(user_id: int, user: UserSchema, session: Session = Depends(get_s
     if not db_user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='User not found')
 
-    try:    
+    try:
         db_user.username = user.username
         db_user.password = user.password
         db_user.email = user.email
@@ -64,19 +64,20 @@ def update_user(user_id: int, user: UserSchema, session: Session = Depends(get_s
         session.refresh(db_user)
 
         return db_user
-    
-    # possível problema: att um user com dados duplicados no BD 
-    except IntegrityError: #noqa: esse erro eh levantado caso o .commit não consiga efetuar a persistencia
-        raise HTTPException(
-            status_code=HTTPStatus.CONFLICT,
-            detail='Username or Email already exists'
-        )
+
+    # possível problema: att um user com dados duplicados no BD
+    except IntegrityError:  # noqa: esse erro eh levantado caso o .commit não consiga efetuar a persistencia
+        raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Username or Email already exists')
 
 
 @app.delete('/users/{user_id}', response_model=Message)
-def delete_user(user_id: int):
-    if user_id > len(database) or user_id < 1:
+def delete_user(user_id: int, session: Session = Depends(get_session)):
+    db_user = session.scalar(select(User).where(User.id == user_id))
+
+    if not db_user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='User not found')
-    database.pop(user_id - 1)
+
+    session.delete(db_user)
+    session.commit()
 
     return {'message': 'User deleted'}

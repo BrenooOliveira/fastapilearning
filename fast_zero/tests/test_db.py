@@ -3,22 +3,21 @@ from dataclasses import asdict
 from sqlalchemy import select
 
 from fast_zero.models import User
-from tests.conftest import mock_db_time
 
 
-def test_create_user(session):
+def test_create_user(session, mock_db_time):
     with mock_db_time(model=User) as time:  # inica o g. de contexto
         new_user = User(username='john', password='secret', email='test@test')
-    session.add(new_user)
-    session.commit()
+        session.add(new_user)
+        session.commit()
 
     user = session.scalar(select(User).where(User.username == 'john'))
 
     assert asdict(user) == {
         'id': 1,
-        'username': 'alice',
+        'username': 'john',
         'password': 'secret',
-        'email': 'teste@test',
+        'email': 'test@test',
         'created_at': time,  # usa o time gerado
         'updated_at': time,
     }
