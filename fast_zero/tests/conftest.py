@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from fast_zero.app import app
 from fast_zero.database import get_session
 from fast_zero.models import User, table_registry
+from fast_zero.security import get_password_hash
 
 
 @pytest.fixture
@@ -72,10 +73,15 @@ def mock_db_time():
 # fixture para criação de registro no BD de teste
 @pytest.fixture
 def user(session):
-    user = User(username='Teste', email='teste@teste.com', password='secretest')
+
+    user_password = 'secretest'
+    user = User(username='Teste', email='teste@teste.com', password=get_password_hash(user_password))
     session.add(user)
 
     session.commit()
     session.refresh(user)
+
+    # monkey patch -> modificamos/estendemos o codigo em tempo de execução
+    user.clean_password = user_password
 
     return user
