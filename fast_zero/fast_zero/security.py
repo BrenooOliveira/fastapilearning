@@ -1,10 +1,7 @@
 from datetime import datetime, timedelta
 from http import HTTPStatus
-from re import sub
-import select
 from zoneinfo import ZoneInfo
 
-from certifi import where
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jwt import DecodeError, decode, encode
@@ -27,9 +24,6 @@ def create_access_token(data: dict):
     Forma um payload do JWT e então codifica as infos em um JWT que é retornado
     :param data: Dicionario de dados do usuario
     :type data: dict
-
-    :return: bb
-    :type return: aa
     """
 
     to_enconde = data.copy()  # aquilo que queremos encondar
@@ -51,28 +45,27 @@ def get_password_hash(password: str):
 def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
 
-# extrair o token, decodificar o token, extrair as infos do user e obter o user do banco de dados. 
-def get_current_user(
-        session: Session = Depends(get_session),
-        token: str = Depends(oauth2_scheme)
-):
-    credentials_exception = HTTPException(status_code=HTTPStatus.UNAUTHORIZED,
-                                          detail='Could not validate credentials',
-                                          headers={'WWW-Authenticate': 'Bearer'}
-    )   
-    
+
+# extrair o token, decodificar o token, extrair as infos do user e obter o user do banco de dados.
+def get_current_user(session: Session = Depends(get_session), token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=HTTPStatus.UNAUTHORIZED,
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
+    )
+
     try:
-        payload = decode(token, SECRET_KEY, algorithms=list(ALGORITHM))
-        subject_email =  payload.get('sub')
+        payload = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        subject_email = payload.get('sub')
 
         if not subject_email:
             raise credentials_exception
-    except DecodeError: # testando de o JWT é um token valido
+    except DecodeError:  # testando de o JWT é um token valido
         raise credentials_exception
-    
+
     user = session.scalar(select(User).where(User.email == subject_email))
 
     if not user:
         raise credentials_exception
-    
+
     return user
