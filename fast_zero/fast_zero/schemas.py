@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class Message(BaseModel):
@@ -25,3 +25,8 @@ class UserList(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class FilterPage(BaseModel):
+    offset: int = Field(default=0, ge=0)
+    limit: int = Field(default=100, ge=1, le=1000, description='Number of items to return, between 1 and 1000')

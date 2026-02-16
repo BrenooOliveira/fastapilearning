@@ -11,3 +11,6 @@ class Settings(BaseSettings):
     )
 
     DATABASE_URL: str  # essa var será preenchida com o valor encontrado com o mesmo nome no .env
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
