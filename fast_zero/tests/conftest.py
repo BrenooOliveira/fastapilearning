@@ -1,10 +1,13 @@
+from asyncio.sslproto import add_flowcontrol_defaults
 from contextlib import contextmanager
 from datetime import datetime
 
+import pytest_asyncio
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import StaticPool, create_engine, event
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from fast_zero.app import app
 from fast_zero.database import get_session
@@ -27,8 +30,8 @@ def client(session):
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
-def session():
+@pytest_asyncio.fixture
+async def session():
     """
     class notes:
     No ambiente de testes do FastAPI,
@@ -39,14 +42,18 @@ def session():
 
     # session utilizada para os testes
     # difere da session do app
-    engine = create_engine('sqlite:///:memory:', connect_args={'check_same_thread': False}, poolclass=StaticPool)
-    table_registry.metadata.create_all(engine)  # cria todas as tbls no bd de teste antes de cada teste
+    engine = create_async_engine('sqlite+aiosqlite:///:memory:', connect_args={'check_same_thread': False}, poolclass=StaticPool) # cria um engine async
 
-    with Session(engine) as session:
+    async with engine.begin() as conn: # com o begin() estamos criando uma transacao ao sqlalchemy
+            # espera até que uma execução sync seja feita
+        await conn.run_sync(table_registry.metadata.create_all) # cria todas as tbls no bd de teste antes de cada teste
+
+    async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session  # noqa: fornece uma instancia de Session que será injetada para cada teste. Essa sessão permite a interação com o bd de teste
 
-    table_registry.metadata.drop_all(engine)  # apos o teste, dropa todas as tabelas criadas em teste
-    engine.dispose()  # fecha sessões associadas ao engine
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.drop_all) # apos o teste, dropa todas as tabelas criadas em teste
+        await engine.dispose()
 
 
 @contextmanager  # gerenciador de contexto. Permite que criemos um "with"
